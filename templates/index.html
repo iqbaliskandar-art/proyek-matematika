@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Belajar & Ujian Matematika SD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .mode-selector-btn { transition: all 0.2s ease-in-out; background-color: white; color: #d97706; }
+        .mode-selector-btn.active { background-color: #f59e0b; color: white; }
+        .grade-selector-btn.active { background-color: #fbbf24; color: white; }
+        .topic-card { transition: all 0.2s ease-in-out; }
+        .topic-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .topic-card.active { transform: translateY(-2px); box-shadow: 0 0 0 3px #fbbf24; background-color: #fef9c3; }
+        .solution { max-height: 0; overflow: hidden; transition: max-height 0.7s ease-in-out; padding-top: 0; padding-bottom: 0; }
+        .solution.show { max-height: 1500px; padding-top: 1rem; padding-bottom: 1rem; }
+        .step-heading { @apply font-semibold text-amber-800 text-sm mb-1 mt-3; }
+        .math-calculation { @apply font-mono bg-gray-100 p-2 rounded text-sm; }
+        .overlay { transition: opacity 0.3s ease-in-out; }
+        .answer-review.correct { border-left: 4px solid #22c55e; }
+        .answer-review.incorrect { border-left: 4px solid #ef4444; }
+        .ujian-option-btn-group button { background-color: #e5e7eb; transition: background-color 0.2s; }
+        .ujian-option-btn-group button.active { background-color: #3b82f6; color: white; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="main-app" class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-amber-600">Platform Belajar & Ujian Matematika</h1>
+            <p class="text-base md:text-lg text-gray-600 mt-2">Untuk Kelas 5 & 6 SD</p>
+        </header>
+
+        <!-- Mode Selection -->
+        <section id="mode-selection" class="text-center mb-12">
+            <div class="flex justify-center gap-4 mb-4">
+                <button id="btn-mode-belajar" class="mode-selector-btn py-3 px-6 sm:px-8 text-sm sm:text-base font-bold rounded-lg shadow-md">Mode Belajar</button>
+                <button id="btn-mode-ujian" class="mode-selector-btn py-3 px-6 sm:px-8 text-sm sm:text-base font-bold rounded-lg shadow-md">Mode Ujian</button>
+            </div>
+            <p class="text-gray-500">Pilih mode belajar untuk mendalami teori, atau mode ujian untuk menguji kemampuanmu.</p>
+        </section>
+
+        <!-- Mode Belajar -->
+        <div id="mode-belajar-content" class="hidden">
+            <section id="grade-selection-belajar" class="mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-center">Pilih Tingkatan Kelas</h2>
+                <div class="flex justify-center gap-4">
+                    <button id="select-grade-5" class="grade-selector-btn bg-white text-amber-600 font-bold py-3 px-8 rounded-lg shadow-md hover:bg-amber-100">Kelas 5</button>
+                    <button id="select-grade-6" class="grade-selector-btn bg-white text-amber-600 font-bold py-3 px-8 rounded-lg shadow-md hover:bg-amber-100">Kelas 6</button>
+                </div>
+            </section>
+            <section id="topics-container" class="flex flex-col gap-8">
+                <div id="topic-grid-5" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+                <div id="topic-grid-6" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            </section>
+            <main id="content-area" class="bg-white p-6 rounded-2xl shadow-lg mt-8 hidden relative">
+                <button id="close-btn" class="absolute top-2 right-2 text-3xl font-bold text-gray-400 hover:text-gray-800 leading-none">&times;</button>
+                <div id="topic-content-container"></div>
+            </main>
+        </div>
+
+        <!-- Mode Ujian -->
+        <div id="mode-ujian-content" class="hidden">
+            <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-bold text-center mb-6 text-amber-700">Atur Ujian</h2>
+                <div class="space-y-6">
+                    <div class="text-center">
+                        <label class="block font-medium text-gray-700 mb-2">Pilih Kelas:</label>
+                        <div id="ujian-kelas-group" class="ujian-option-btn-group grid grid-cols-2 gap-2">
+                            <button data-value="5" class="py-2 px-4 rounded-md font-semibold">Kelas 5</button>
+                            <button data-value="6" class="flex-1 py-2 px-4 rounded-md font-semibold">Kelas 6</button>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <label class="block font-medium text-gray-700 mb-2">Jumlah Soal:</label>
+                        <div id="ujian-jumlah-group" class="ujian-option-btn-group grid grid-cols-3 gap-2">
+                            <button data-value="5" class="py-2 px-4 rounded-md font-semibold">5</button>
+                            <button data-value="10" class="py-2 px-4 rounded-md font-semibold">10</button>
+                            <button data-value="20" class="py-2 px-4 rounded-md font-semibold">20</button>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <label class="block font-medium text-gray-700 mb-2">Tingkat Kesulitan:</label>
+                        <div id="ujian-kesulitan-group" class="ujian-option-btn-group grid grid-cols-3 gap-2">
+                            <button data-value="mudah" class="py-2 px-4 rounded-md font-semibold">Mudah</button>
+                            <button data-value="sedang" class="py-2 px-4 rounded-md font-semibold">Sedang</button>
+                            <button data-value="sulit" class="py-2 px-4 rounded-md font-semibold">Sulit</button>
+                        </div>
+                    </div>
+                    <button id="start-ujian-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow-md mt-6">Mulai Ujian</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Overlay & Results Overlay -->
+    <div id="quiz-overlay" class="overlay fixed inset-0 bg-gray-100 z-50 p-4 sm:p-8 hidden opacity-0">
+        <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl h-full flex flex-col">
+            <header class="p-4 border-b flex justify-between items-center"><h2 id="quiz-title" class="text-lg sm:text-xl font-bold text-amber-700">Ujian Berlangsung</h2><div id="quiz-progress" class="font-semibold"></div></header>
+            <div class="p-6 flex-grow overflow-y-auto"><p id="quiz-question" class="text-base sm:text-lg mb-4"></p><input id="quiz-answer-input" type="text" placeholder="Ketik jawabanmu..." class="text-base sm:text-lg w-full p-2 border border-gray-300 rounded-md"></div>
+            <footer class="p-4 border-t flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button id="quiz-prev-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 font-bold py-2 px-6 rounded-lg">Sebelumnya</button>
+                    <button id="quiz-next-btn" class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-6 rounded-lg">Berikutnya</button>
+                </div>
+                <button id="finish-quiz-btn" class="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Selesaikan Ujian</button>
+            </footer>
+        </div>
+    </div>
+    <div id="results-overlay" class="overlay fixed inset-0 bg-gray-100 z-50 p-4 sm:p-8 hidden opacity-0">
+         <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl h-full flex flex-col">
+             <header class="p-4 border-b flex flex-col sm:flex-row justify-between items-center gap-4"><h2 class="text-xl sm:text-2xl font-bold text-amber-700">Hasil Ujian</h2><div class="flex gap-2"><button id="export-pdf-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 text-sm sm:px-6 rounded-lg">Export ke PDF</button><button id="close-results-btn" class="bg-gray-200 hover:bg-gray-300 font-bold py-2 px-4 text-sm sm:px-6 rounded-lg">Tutup</button></div></header>
+            <div id="results-content" class="flex-grow p-6 overflow-y-auto"><div class="text-center mb-8"><p class="text-lg text-gray-600">Skor Akhir</p><p id="results-score" class="text-5xl sm:text-7xl font-bold text-green-500"></p><p id="results-summary" class="text-gray-500"></p></div><div class="bg-amber-50 border border-amber-200 p-4 rounded-lg"><h3 class="text-lg font-bold text-amber-800 mb-2">Analisis & Rekomendasi</h3><div id="results-analysis"></div></div><h3 class="text-xl font-bold mt-8 mb-4">Tinjau Jawaban</h3><div id="results-review-container" class="space-y-4"></div></div>
+         </div>
+    </div>
+
+    <script>
+        // --- Helper Functions ---
+        function getPrimeFactorization(num) { const factors = {}; let divisor = 2; let n = Math.abs(num); if (n <= 1) return { [n]: 1 }; while (n > 1) { if (n % divisor === 0) { factors[divisor] = (factors[divisor] || 0) + 1; n /= divisor; } else { divisor++; } } return factors; }
+        function formatFactorization(factors) { if (Object.keys(factors).length === 0) return '1'; return Object.entries(factors).map(([base, exp]) => exp > 1 ? `${base}<sup>${exp}</sup>` : base).join(' × '); }
+        function generateFactorTreeText(num) { if (num <= 1) return `<div class="math-calculation"><p>Faktorisasi ${num}: ${num}</p></div>`; let factors = getPrimeFactorization(num); return `<div class="math-calculation"><strong>Pohon Faktor ${num}:</strong><br>Faktorisasi Prima: ${formatFactorization(factors)}</div>`; }
+        function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function simpleNumericAnswer(solutionText) { const match = solutionText.match(/<strong>(.*?)<\/strong>/g); if (!match) return null; const lastMatch = match[match.length - 1]; return lastMatch.replace(/<\/?strong>/g, '').split(' ')[0].replace(/<sup[^>]*>.*?<\/sup>/g, '').replace(/<sup>/g, '^').replace(/<\/sup>/g, '').replace(/&frasl;/g, '/'); }
+
+        // --- Study Data ---
+        const studyData = {
+            grade5: {
+                deret: { id: 'deret', title: 'Deret Bilangan', color: 'bg-sky-100', theory: "Deret aritmatika adalah barisan bilangan dengan selisih yang sama. Untuk menjumlahkannya dengan cepat, gunakan rumus: <strong>Jumlah = (Banyak Bilangan / 2) × (Bilangan Awal + Bilangan Akhir)</strong>.", exampleProblem: "Berapakah jumlah bilangan dari 10 sampai 30?", exampleSolution: `<div class="text-sm"><p class="step-heading">1. Hitung Banyak Bilangan (n)</p><p>n = (Akhir - Awal) + 1 = (30 - 10) + 1 = <strong>21</strong></p><p class="step-heading">2. Hitung Jumlah</p><p>Jumlah = (21 / 2) × (10 + 30) = 10.5 × 40 = <strong>420</strong></p></div>`, variations:[{ id: 'sum_series', interactiveInputs: [{ id: 'start', randomRanges: {mudah:[1,20], sedang:[21,50], sulit:[51,100]} }, { id: 'end', randomRanges: {mudah:[21,50], sedang:[51,200], sulit:[201,500]} }], generateProblem: (v) => `Jumlah bilangan asli dari ${v.start} sampai ${v.end}?`, generateSolution: (v) => { const n = v.end - v.start + 1; if (n <= 0) return `Invalid`; const t = (n / 2) * (v.start + v.end); return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Kita diminta untuk menjumlahkan semua bilangan secara berurutan mulai dari ${v.start} hingga ${v.end}.</p><p class="step-heading">2. Konsep</p><p>Gunakan rumus deret: J = (n/2) * (Awal+Akhir).</p><p class="step-heading">3. Hitung</p><p>n = ${v.end}-${v.start}+1 = <strong>${n}</strong>.<br>J = (${n}/2) * (${v.start}+${v.end}) = <strong>${t}</strong>.</p><p class="step-heading">4. Simpulan</p><p class="font-semibold">Jumlahnya adalah <strong>${t}</strong>.</p></div>`; } }] },
+                fpk_kpk: { id: 'fpk_kpk', title: 'FPB & KPK', color: 'bg-green-100', theory: "<strong>FPB</strong> digunakan untuk 'membagi sama banyak'. <strong>KPK</strong> digunakan untuk mencari 'kapan terjadi bersamaan lagi'. Keduanya dicari menggunakan faktorisasi prima.", exampleProblem: "Lampu A menyala setiap 6 detik, lampu B setiap 8 detik. Kapan mereka menyala bersama lagi?", exampleSolution: `<div class="text-sm"><p class="step-heading">1. Konsep</p><p>Soal 'bersamaan lagi' menggunakan <strong>KPK</strong>.</p><p class="step-heading">2. Faktorisasi Prima</p><p>6 = 2 × 3<br>8 = 2³</p><p class="step-heading">3. Hitung KPK</p><p>Ambil semua faktor, pangkat terbesar: 2³ × 3 = 8 × 3 = <strong>24</strong>. Mereka menyala bersama setiap <strong>24 detik</strong>.</p></div>`, variations:[{ id: 'soal_cerita_fpb', interactiveInputs: [ { id: 'item1', randomRanges: {mudah:[10,30], sedang:[31,60], sulit:[61,100]} }, { id: 'item2', randomRanges: {mudah:[10,30], sedang:[31,60], sulit:[61,100]} } ], generateProblem: (v) => `Ibu punya ${v.item1} apel & ${v.item2} jeruk. Tiap parsel isinya sama. Berapa parsel terbanyak?`, generateSolution: (v) => { const f1 = getPrimeFactorization(v.item1); const f2 = getPrimeFactorization(v.item2); let fpb = 1; for (const factor in f1) { if (f2[factor]) { fpb *= Math.pow(parseInt(factor), Math.min(f1[factor], f2[factor])); } } return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Kunci: <strong>"membagi sama banyak"</strong> & <strong>"paling banyak"</strong>.</p><p class="step-heading">2. Konsep</p><p>Ini adalah ciri khas soal <strong>FPB</strong>.</p><p class="step-heading">3. Hitung</p><p><em>Faktorisasi Prima:</em></p>${generateFactorTreeText(v.item1)}<div class="my-1"></div>${generateFactorTreeText(v.item2)}<p class="mt-1"><em>Aturan FPB:</em> Faktor sama, pangkat terkecil.</p><div class="math-calculation">FPB = <strong>${fpb}</strong></div><p class="step-heading">4. Simpulan</p><p class="font-semibold">Parsel terbanyak adalah <strong>${fpb}</strong>.</p></div>`; } }] },
+                pecahan: { id: 'pecahan', title: 'Pecahan', color: 'bg-red-100', theory: "Kata kunci 'dari' dalam soal pecahan berarti perkalian. Untuk mencari sisa, lakukan pengurangan setelah perkalian.", exampleProblem: "Ayah punya 3/4 liter cat. 1/2 dari cat itu digunakan. Sisa?", exampleSolution: `<div class="text-sm"><p class="step-heading">1. Cat yang Digunakan</p><p>1/2 dari 3/4 = 1/2 × 3/4 = 3/8 liter.</p><p class="step-heading">2. Sisa Cat</p><p>3/4 - 3/8 = 6/8 - 3/8 = <strong>3/8</strong> liter.</p></div>`, variations: [{ id: 'fraction_of_fraction', interactiveInputs: [{ id: 'num_awal', randomRanges: {mudah:[1,3], sedang:[1,5], sulit:[2,7]} }, { id: 'den_awal', randomRanges: {mudah:[4,7], sedang:[6,12], sulit:[8,15]} }, { id: 'num_bagi', randomRanges: {mudah:[1,2], sedang:[1,4], sulit:[2,6]} }, { id: 'den_bagi', randomRanges: {mudah:[3,5], sedang:[5,10], sulit:[7,12]} }], generateProblem: (v) => `Ani punya ${v.num_awal}/${v.den_awal} kue. ${v.num_bagi}/${v.den_bagi} dari kuenya diberikan. Sisa?`, generateSolution: (v) => { const nd = v.num_awal * v.num_bagi; const dd = v.den_awal * v.den_bagi; const ns = (v.num_awal * dd) - (nd * v.den_awal); const ds = v.den_awal * dd; const gcd = (a, b) => b ? gcd(b, a % b) : a; const sg = gcd(Math.abs(ns), ds); return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Cari sisa kue setelah sebagian <strong>dari</strong> yang ada diberikan.</p><p class="step-heading">2. Konsep</p><p>"Dari" berarti perkalian. Lalu cari sisa dengan pengurangan.</p><p class="step-heading">3. Hitung</p><p>Diberikan: ${v.num_bagi}/${v.den_bagi} × ${v.num_awal}/${v.den_awal} = <strong><sup>${nd}</sup>&frasl;<sub>${dd}</sub></strong><br>Sisa: ${v.num_awal}/${v.den_awal} - ${nd}/${dd} = <strong>${ns/sg}/${ds/sg}</strong></p><p class="step-heading">4. Simpulan</p><p>Sisa kue <strong>${ns/sg}/${ds/sg}</strong>.</p></div>`; } }] },
+                perbandingan: { id: 'perbandingan', title: 'Perbandingan', color: 'bg-orange-100', theory: "Jika diketahui jumlah, maka jumlahkan perbandingan. Jika diketahui selisih, maka kurangi perbandingan. Hasilnya digunakan untuk mencari 'nilai 1 bagian'.", exampleProblem: "Uang A : B = 2 : 3. Jumlah uang mereka Rp 50.000. Uang A?", exampleSolution: `<div class="text-sm"><p class="step-heading">1. Jumlahkan Perbandingan</p><p>2 + 3 = 5 bagian.</p><p class="step-heading">2. Nilai 1 Bagian</p><p>Rp 50.000 / 5 = Rp 10.000.</p><p class="step-heading">3. Uang A</p><p>Uang A = 2 bagian × Rp 10.000 = <strong>Rp 20.000</strong>.</p></div>`, variations: [{ id: 'sum_of_values', interactiveInputs: [ { id: 'ratio1', randomRanges: {mudah:[1,3], sedang:[2,5], sulit:[3,7]} }, { id: 'ratio2', randomRanges: {mudah:[4,6], sedang:[6,10], sulit:[8,15]} }, { id: 'total_val', randomRanges: {mudah:[20,50], sedang:[51,100], sulit:[101,200]} } ], generateProblem: (v) => `A:B = ${v.ratio1}:${v.ratio2}. Jumlah ${v.total_val}. Nilai A?`, generateSolution: (v) => { const tr = v.ratio1 + v.ratio2; const op = v.total_val / tr; const val1 = op * v.ratio1; return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Kita tahu perbandingan dan jumlah total. Kita harus cari nilai salah satunya.</p><p class="step-heading">2. Konsep</p><p>Gunakan jumlah perbandingan untuk mencari "nilai 1 bagian".</p><p class="step-heading">3. Hitung</p><p>Jml Perbandingan: ${v.ratio1}+${v.ratio2}=<strong>${tr}</strong>.<br>Nilai 1 Bagian: ${v.total_val}/${tr}=<strong>${op.toFixed(1)}</strong>.<br>Nilai A: ${v.ratio1}×${op.toFixed(1)}=<strong>${val1.toFixed(1)}</strong>.</p><p class="step-heading">4. Simpulan</p><p>Nilai A adalah <strong>${val1.toFixed(1)}</strong>.</p></div>`; } }] },
+                kecepatan: { id: 'kecepatan', title: 'Kecepatan', color: 'bg-purple-100', theory: "Gunakan segitiga JKW (Jarak = Kecepatan x Waktu). Untuk soal susul menyusul, gunakan selisih kecepatan. Untuk soal berpapasan, gunakan jumlah kecepatan.", exampleProblem: "Jarak 100 km ditempuh dalam 2 jam. Kecepatan?", exampleSolution: `<div class="text-sm"><p>Kecepatan = Jarak / Waktu = 100 km / 2 jam = <strong>50 km/jam</strong>.</p></div>`, variations: [{ id: 'catch_up', interactiveInputs: [ { id: 'gap', randomRanges: {mudah:[5,15], sedang:[16,30], sulit:[31,50]} }, { id: 'speedA', randomRanges: {mudah:[30,50], sedang:[40,60], sulit:[50,70]} }, { id: 'speedB', randomRanges: {mudah:[51,60], sedang:[61,80], sulit:[71,90]} } ], generateProblem: (v) => `A ${v.gap} km di depan B. Kec. A ${v.speedA}, B ${v.speedB} km/jam. Kapan B menyusul A?`, generateSolution: (v) => { const sd = v.speedB - v.speedA; if(sd <= 0) return `Invalid`; const t = v.gap / sd; return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Mobil B (lebih cepat) harus mengejar jarak ${v.gap} km dari mobil A (lebih lambat).</p><p class="step-heading">2. Konsep</p><p>Kunci soal susul menyusul adalah <strong>Selisih Kecepatan</strong>.</p><p class="step-heading">3. Hitung</p><p>Selisih Kec: ${v.speedB}-${v.speedA}=<strong>${sd}</strong> km/jam.<br>Waktu: ${v.gap}/${sd}=<strong>${t.toFixed(2)} jam</strong>.</p><p class="step-heading">4. Simpulan</p><p>Butuh <strong>${t.toFixed(2)} jam</strong>.</p></div>`; } }] },
+                pola: { id: 'pola', title: 'Pola Bilangan', color: 'bg-teal-100', theory: "Cari aturan yang konsisten dari satu bilangan ke bilangan berikutnya, bisa berupa penjumlahan, perkalian, atau kombinasi keduanya.", exampleProblem: "2, 5, 8, 11, ... Angka berikutnya?", exampleSolution: `<div class="text-sm"><p>Polanya adalah 'ditambah 3'. Maka, 11 + 3 = <strong>14</strong>.</p></div>`, variations: [{ id: 'find_next_pattern', interactiveInputs: [ { id: 'start', randomRanges: {mudah:[1,5], sedang:[1,10], sulit:[2,15]} }, { id: 'multiplier', randomRanges: {mudah:[2,3], sedang:[2,4], sulit:[3,5]} }, { id: 'adder', randomRanges: {mudah:[1,3], sedang:[1,5], sulit:[2,7]} } ], generateProblem: (v) => `Pola: mulai ${v.start}, aturan "x${v.multiplier} lalu +${v.adder}". Suku ke-5?`, generateSolution: (v) => { let terms = [v.start]; for(let i=0; i<4; i++) { terms.push(terms[i] * v.multiplier + v.adder); } return `<div class="text-sm"><p class="step-heading">1. Hitung</p><ul class="list-decimal list-inside"><li>Suku 1: ${terms[0]}</li><li>Suku 2: ${terms[1]}</li><li>Suku 3: ${terms[2]}</li><li>Suku 4: ${terms[3]}</li><li>Suku 5: ${terms[4]}</li></ul><p class="step-heading">2. Simpulan</p><p>Suku ke-5 adalah <strong>${terms[4]}</strong>.</p></div>`; } }] },
+                luas: { id: 'luas', title: 'Luas Bangun Datar', color: 'bg-gray-200', theory: "Luas Persegi = sisi x sisi. Luas Persegi Panjang = panjang x lebar. Luas Segitiga = 1/2 x alas x tinggi.", exampleProblem: "Persegi panjang dengan p=10cm dan l=5cm. Luasnya?", exampleSolution: `<div class="text-sm"><p>Luas = p × l = 10 × 5 = <strong>50 cm²</strong>.</p></div>`, variations: [{ id: 'shaded_area', interactiveInputs: [ { id: 'side_large', randomRanges: {mudah:[8,15], sedang:[16,25], sulit:[26,40]} }, { id: 'side_small', randomRanges: {mudah:[2,7], sedang:[8,15], sulit:[16,25]} } ], generateProblem: (v) => `Persegi besar (sisi ${v.side_large}) punya lubang persegi (sisi ${v.side_small}). Luas diarsir?`, generateSolution: (v) => { if(v.side_small >= v.side_large) return `Invalid`; const al = v.side_large**2; const as = v.side_small**2; return `<div class="text-sm"><p class="step-heading">1. Konsep</p><p>Luas Besar - Luas Kecil.</p><p class="step-heading">2. Hitung</p><p>L.Besar=${v.side_large}²=<strong>${al}</strong>.<br>L.Kecil=${v.side_small}²=<strong>${as}</strong>.<br>Diarsir=${al}-${as}=<strong>${al-as}</strong>.</p><p class="step-heading">3. Simpulan</p><p>Luasnya <strong>${al-as} cm²</strong>.</p></div>`; } }] },
+                peluang: { id: 'peluang', title: 'Peluang', color: 'bg-indigo-100', theory: "Peluang adalah perbandingan antara jumlah kejadian yang diinginkan dengan jumlah seluruh kemungkinan kejadian.", exampleProblem: "Sebuah dadu dilempar. Peluang muncul angka genap?", exampleSolution: `<div class="text-sm"><p>Angka genap ada 3 (2,4,6). Total semua sisi ada 6. Peluang = 3/6 = <strong>1/2</strong>.</p></div>`, variations: [{ id: 'ball_probability', interactiveInputs: [ { id: 'red', randomRanges: {mudah:[1,5], sedang:[1,10], sulit:[5,15]} }, { id: 'blue', randomRanges: {mudah:[1,5], sedang:[1,10], sulit:[5,15]} }, { id: 'yellow', randomRanges: {mudah:[1,5], sedang:[1,10], sulit:[5,15]} } ], generateProblem: (v) => `Ada ${v.red}M, ${v.blue}B, ${v.yellow}K. Peluang terambil BUKAN biru?`, generateSolution: (v) => { const total = v.red + v.blue + v.yellow; if(total === 0) return `Invalid`; const notBlue = v.red + v.yellow; const gcd = (a, b) => b ? gcd(b, a % b) : a; const common = gcd(notBlue, total); return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Cari peluang mengambil bola yang warnanya bukan biru.</p><p class="step-heading">2. Konsep</p><p>Peluang = (Jml Diinginkan) / (Jml Total).</p><p class="step-heading">3. Hitung</p><p>Total=${total}.<br>Bukan Biru=${notBlue}.<br>P=${notBlue}/${total}=<strong>${notBlue/common}/${total/common}</strong></p><p class="step-heading">4. Simpulan</p><p>Peluangnya <strong>${notBlue/common}/${total/common}</strong>.</p></div>`; } }] },
+                geometri: { id: 'geometri', title: 'Geometri', color: 'bg-rose-100', theory: "Jumlah sudut dalam segitiga adalah 180°. Jumlah sudut dalam segiempat adalah 360°.", exampleProblem: "Segitiga sama sisi, berapa besar tiap sudutnya?", exampleSolution: `<div class="text-sm"><p>Segitiga sama sisi punya 3 sudut yang sama besar. Maka, 180° / 3 = <strong>60°</strong>.</p></div>`, variations: [{ id: 'find_triangle_angle', interactiveInputs: [ { id: 'angleA', randomRanges: {mudah:[40,80], sedang:[30,90], sulit:[20,100]} }, { id: 'angleB', randomRanges: {mudah:[40,80], sedang:[30,90], sulit:[20,100]} } ], generateProblem: (v) => `Segitiga sudutnya ${v.angleA}° & ${v.angleB}°. Sudut ketiga?`, generateSolution: (v) => { const sum = v.angleA + v.angleB; if (sum >= 180) return `Invalid`; const angleC = 180 - sum; return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Kita harus mencari besar sudut yang tersisa dalam sebuah segitiga.</p><p class="step-heading">2. Konsep</p><p>Total sudut segitiga adalah <strong>180°</strong>.</p><p class="step-heading">3. Hitung</p><p>Jumlah Sudut Diketahui: ${v.angleA}°+${v.angleB}°=<strong>${sum}°</strong>.<br>Sudut Ketiga = 180° - ${sum}° = <strong>${angleC}°</strong>.</p><p class="step-heading">4. Simpulan</p><p>Sudut ketiga <strong>${angleC}°</strong>.</p></div>`; } }] },
+                pengolahanData: { id: 'pengolahanData', title: 'Pengolahan Data', color: 'bg-cyan-100', theory: "<strong>Mean</strong> = Rata-rata. <strong>Median</strong> = Nilai tengah setelah diurutkan. <strong>Modus</strong> = Nilai yang paling sering muncul.", exampleProblem: "Data: 2, 3, 3, 4, 8. Mediannya?", exampleSolution: `<div class="text-sm"><p>Data sudah urut. Nilai yang berada tepat di tengah adalah <strong>3</strong>.</p></div>`, variations: [{ id: 'calculate_stats', interactiveInputs: [ { id: 'dataSet', randomDataConfig: { count: [5,8], range: [6,10] } } ], generateProblem: (v) => `Data: ${v.dataSet}. Tentukan mean, median, modus!`, generateSolution: (v) => { const d = v.dataSet.split(',').map(n => parseFloat(n.trim())).filter(n => !isNaN(n)); if (d.length === 0) return `Invalid`; const sum = d.reduce((a, c) => a + c, 0); const mean = sum / d.length; const s = [...d].sort((a, b) => a - b); const mid = Math.floor(s.length / 2); const median = s.length % 2 !== 0 ? s[mid] : (s[mid - 1] + s[mid]) / 2; const f = {}; d.forEach(n => f[n] = (f[n] || 0) + 1); let mf = 0; let modes = []; for (const k in f) { if (f[k] > mf) { mf = f[k]; modes = [k]; } else if (f[k] === mf) { modes.push(k); } } const modeText = mf > 1 ? modes.join(', ') : 'Tidak ada'; return `<div class="text-sm"><p class="step-heading">1. Mean</p><div class="math-calculation">(${d.join('+')})/${d.length}=<strong>${mean.toFixed(2)}</strong></div><p class="step-heading">2. Median</p><div class="math-calculation">Urut: ${s.join(', ')}<br>Median=<strong>${median}</strong></div><p class="step-heading">3. Modus</p><div class="math-calculation">Modus=<strong>${modeText}</strong></div></div>`; } }] },
+            },
+            grade6: {
+                bilanganBulat: { id: 'bilanganBulat', title: 'Bilangan Bulat', color: 'bg-slate-100', theory: "Penjumlahan dengan bilangan negatif sama dengan pengurangan. Pengurangan dengan bilangan negatif sama dengan penjumlahan. Contoh: 5 + (-3) = 5 - 3 = 2. Dan 5 - (-3) = 5 + 3 = 8.", exampleProblem: "Hasil dari -7 + 15?", exampleSolution: `<div class="text-sm"><p>Bayangkan kamu punya hutang 7, lalu kamu bayar 15. Kamu akan punya kembalian. Kembaliannya adalah 15 - 7 = <strong>8</strong>.</p></div>`, variations: [{ id: 'ops_bilangan_bulat', interactiveInputs: [ { id: 'bilA', randomRanges: {mudah:[-10,10], sedang:[-25,25], sulit:[-50,50]} }, { id: 'bilB', randomRanges: {mudah:[-10,10], sedang:[-25,25], sulit:[-50,50]} } ], generateProblem: (v) => `Hasil dari ${v.bilA} + (${v.bilB})?`, generateSolution: (v) => `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Kita menjumlahkan ${v.bilA} dengan bilangan negatif ${v.bilB}.</p><p class="step-heading">2. Konsep</p><p>Aturan: "+ bertemu -" menjadi "-". Jadi, ${v.bilA} + (${v.bilB}) sama dengan ${v.bilA} - ${Math.abs(v.bilB)}.</p><p class="step-heading">3. Hitung</p><p class="math-calculation">${v.bilA} - ${Math.abs(v.bilB)} = <strong>${v.bilA + v.bilB}</strong></p><p class="step-heading">4. Simpulan</p><p class="font-semibold">Hasilnya <strong>${v.bilA + v.bilB}</strong>.</p></div>` }] },
+                volumeBangunRuang: { id: 'volumeBangunRuang', title: 'Volume Bangun Ruang', color: 'bg-yellow-100', theory: "Volume adalah isi dari bangun ruang. Rumus Volume Kubus = sisi³. Rumus Volume Tabung = π × r² × t.", exampleProblem: "Kubus dengan sisi 5 cm, volumenya?", exampleSolution: `<div class="text-sm"><p>Volume = 5 × 5 × 5 = <strong>125 cm³</strong>.</p></div>`, variations: [{ id: 'vol_kubus', interactiveInputs: [{ id: 'sisi', randomRanges: {mudah:[2,8], sedang:[9,15], sulit:[16,25]} }], generateProblem: (v) => `Volume kubus dg sisi ${v.sisi} cm?`, generateSolution: (v) => { const vol = v.sisi ** 3; return `<div class="text-sm"><p class="step-heading">1. Konsep</p><p>Rumus: <strong>V = s³</strong>.</p><p class="step-heading">2. Hitung</p><p class="math-calculation">V = ${v.sisi}³ = <strong>${vol} cm³</strong></p><p class="step-heading">3. Simpulan</p><p>Volumenya <strong>${vol} cm³</strong>.</p></div>`; } }, { id: 'vol_tabung', interactiveInputs: [{ id: 'jari', randomRanges: {mudah:[2,7], sedang:[8,14], sulit:[15,25]} }, { id: 'tinggi', randomRanges: {mudah:[5,10], sedang:[11,20], sulit:[21,30]} }], generateProblem: (v) => `Volume tabung (r=${v.jari}cm, t=${v.tinggi}cm)?`, generateSolution: (v) => { const pi = v.jari % 7 === 0 ? '22/7' : '3.14'; const vol = (pi === '22/7' ? 22/7 : 3.14) * v.jari**2 * v.tinggi; return `<div class="text-sm"><p class="step-heading">1. Konsep</p><p>V = πr²t. Pakai π=${pi}.</p><p class="step-heading">2. Hitung</p><p>V=${pi}×${v.jari}²×${v.tinggi}=<strong>${vol.toFixed(2)}cm³</strong></p><p class="step-heading">3. Simpulan</p><p>Volumenya <strong>${vol.toFixed(2)}cm³</strong>.</p></div>`; } }] },
+                skala: { id: 'skala', title: 'Skala', color: 'bg-lime-100', theory: "Skala digunakan untuk membandingkan ukuran pada gambar (peta) dengan ukuran sebenarnya. Rumus: Jarak Sebenarnya = Jarak Peta × Skala.", exampleProblem: "Skala 1:100. Jarak di gambar 2 cm. Jarak sebenarnya?", exampleSolution: `<div class="text-sm"><p>Jarak Sebenarnya = 2 cm × 100 = 200 cm = <strong>2 meter</strong>.</p></div>`, variations: [{ id: 'jarak_sebenarnya', interactiveInputs: [{ id: 'skala', randomRanges: {mudah:[1000,50000], sedang:[50001,250000], sulit:[250001,1000000]} }, { id: 'jarakPeta', randomRanges: {mudah:[2,10], sedang:[11,20], sulit:[21,30]} }], generateProblem: (v) => `Skala 1:${v.skala}, jarak peta ${v.jarakPeta} cm. Jarak sebenarnya (km)?`, generateSolution: (v) => { const jscm = v.jarakPeta * v.skala; const jskm = jscm / 100000; return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Cari jarak di dunia nyata berdasarkan jarak di peta dan skalanya, lalu ubah satuan.</p><p class="step-heading">2. Konsep</p><p>JS = JP × Skala. Ingat 1 km = 100.000 cm.</p><p class="step-heading">3. Hitung</p><p>JS(cm)=${v.jarakPeta}×${v.skala}=<strong>${jscm}cm</strong>.<br>JS(km)=${jscm}/100.000=<strong>${jskm}</strong>.</p><p class="step-heading">4. Simpulan</p><p>Jaraknya <strong>${jskm} km</strong>.</p></div>`; } }] },
+                lingkaran: { id: 'lingkaran', title: 'Lingkaran', color: 'bg-pink-100', theory: "Gunakan π = 22/7 jika jari-jari (r) kelipatan 7, jika tidak gunakan 3.14. Rumus Luas = π × r × r. Rumus Keliling = 2 × π × r.", exampleProblem: "Lingkaran dengan jari-jari 14 cm. Luasnya?", exampleSolution: `<div class="text-sm"><p class="step-heading">1. Tentukan π</p><p>Karena 14 adalah kelipatan 7, gunakan π = 22/7.</p><p class="step-heading">2. Hitung Luas</p><p>Luas = 22/7 × 14 × 14 = 22 × 2 × 14 = <strong>616 cm²</strong>.</p></div>`, variations: [{ id: 'luas_keliling', interactiveInputs: [{ id: 'jari', randomRanges: {mudah:[7,14], sedang:[15,21], sulit:[22,35]} }], generateProblem: (v) => `Lingkaran (r=${v.jari} cm). Hitung luas & keliling!`, generateSolution: (v) => { const pi = v.jari % 7 === 0 ? '22/7' : '3.14'; const piVal = pi === '22/7' ? 22/7 : 3.14; const l = piVal * v.jari**2; const k = 2 * piVal * v.jari; return `<div class="text-sm"><p class="step-heading">1. Konsep</p><p>π=${pi}. Luas=πr², Keliling=2πr.</p><p class="step-heading">2. Hitung</p><p>Luas=${pi}×${v.jari}²=<strong>${l.toFixed(2)}</strong>.<br>Keliling=2×${pi}×${v.jari}=<strong>${k.toFixed(2)}</strong>.</p><p class="step-heading">3. Simpulan</p><p>Luas <strong>${l.toFixed(2)}cm²</strong>, Keliling <strong>${k.toFixed(2)}cm</strong>.</p></div>`; } }] },
+                logikaPencacahan: { id: 'logikaPencacahan', title: 'Logika & Pencacahan', color: 'bg-fuchsia-100', theory: "<strong>Permutasi</strong> (urutan penting) gunakan metode kotak. <strong>Kombinasi</strong> (urutan tidak penting) gunakan metode mendaftar.", exampleProblem: "Dari angka 4, 5, 6, akan dibuat bilangan 3 angka berbeda. Berapa banyak?", exampleSolution: `<div class="text-sm"><p class="step-heading">1. Konsep</p><p>Urutan penting (456 beda dengan 654), jadi ini permutasi. Gunakan metode kotak.</p><p class="step-heading">2. Metode Kotak</p><p>Ada 3 kotak (ratusan, puluhan, satuan).<br>Kotak 1 bisa diisi 3 angka.<br>Kotak 2 bisa diisi 2 angka (sisa).<br>Kotak 3 bisa diisi 1 angka (sisa).<br>Total = 3 × 2 × 1 = <strong>6</strong>.</p></div>`, variations: [{ id: 'susun_angka', interactiveInputs: [{ id: 'dataSet', randomDataConfig: { count: [3,4], range: [1,9] } }], generateProblem: (v) => `Dari angka ${v.dataSet}, berapa banyak bilangan berbeda bisa dibentuk?`, generateSolution: (v) => { const arr = v.dataSet.split(',').map(s => s.trim()).filter(s => s); const n = arr.length; let res = 1; let calcStr = []; for (let i = n; i > 0; i--) { res *= i; calcStr.push(i); } return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Kita harus menyusun semua angka yang tersedia menjadi bilangan, di mana urutan angkanya penting.</p><p class="step-heading">2. Konsep</p><p>Gunakan <strong>aturan pengisian tempat (kotak)</strong>. Jumlah kotak sama dengan jumlah angka.</p><p class="step-heading">3. Hitung</p><p>Total susunan = ${calcStr.join(' × ')} = <strong>${res}</strong>.</p><p class="step-heading">4. Simpulan</p><p>Ada <strong>${res}</strong> bilangan berbeda yang bisa dibentuk.</p></div>`; } }, { id: 'pilih_tim', interactiveInputs: [{ id: 'namaSet', randomDataConfig: { count: [4,6], from: ['A','B','C','D','E','F','G'] } }, { id: 'ukuranTim', randomRanges: {mudah:[2,2], sedang:[2,3], sulit:[3,3]} }], generateProblem: (v) => `Dari ${v.namaSet}, dipilih ${v.ukuranTim} anak. Berapa tim berbeda?`, generateSolution: (v) => { const arr = v.namaSet.split(',').map(s => s.trim()).filter(s => s); const k = v.ukuranTim; function getCombinations(array, k) { let result = []; function backtrack(combination, start) { if (combination.length === k) { result.push([...combination]); return; } for (let i = start; i < array.length; i++) { combination.push(array[i]); backtrack(combination, i + 1); combination.pop(); } } backtrack([], 0); return result; } const combs = getCombinations(arr, k); return `<div class="text-sm"><p class="step-heading">1. Pahami</p><p>Kita harus memilih ${k} anak dari ${arr.length} anak, di mana urutan tidak penting (tim A&B sama dengan tim B&A).</p><p class="step-heading">2. Konsep</p><p>Gunakan <strong>mendaftar sistematis</strong> untuk menemukan semua kombinasi unik.</p><p class="step-heading">3. Hitung</p><p>Daftar semua kemungkinan tim:</p><div class="math-calculation">${combs.map(c => `(${c.join(', ')})`).join('<br>')}</div><p class="step-heading">4. Simpulan</p><p>Ada <strong>${combs.length}</strong> tim berbeda.</p></div>`; } }] }
+            }
+        };
+
+        // --- Global State ---
+        let currentQuiz = {};
+
+        // --- Event Listeners & UI Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid5 = document.getElementById('topic-grid-5');
+            const grid6 = document.getElementById('topic-grid-6');
+
+            function showMode(mode) {
+                document.getElementById('mode-belajar-content').classList.toggle('hidden', mode !== 'belajar');
+                document.getElementById('mode-ujian-content').classList.toggle('hidden', mode !== 'ujian');
+                document.getElementById('btn-mode-belajar').classList.toggle('active', mode === 'belajar');
+                document.getElementById('btn-mode-ujian').classList.toggle('active', mode !== 'belajar');
+            }
+
+            function showGradeTopics(grade, event) {
+                document.querySelectorAll('#grade-selection-belajar .grade-selector-btn').forEach(btn => btn.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+                document.getElementById('topic-grid-5').classList.toggle('hidden', grade !== 5);
+                document.getElementById('topic-grid-6').classList.toggle('hidden', grade !== 6);
+                document.getElementById('content-area').classList.add('hidden');
+            }
+
+            // Initial setup
+            Object.values(studyData.grade5).forEach(topic => createTopicCard(topic, grid5, 5));
+            Object.values(studyData.grade6).forEach(topic => createTopicCard(topic, grid6, 6));
+
+            // Setup event listeners programmatically
+            document.getElementById('btn-mode-belajar').addEventListener('click', () => showMode('belajar'));
+            document.getElementById('btn-mode-ujian').addEventListener('click', () => showMode('ujian'));
+            document.getElementById('select-grade-5').addEventListener('click', (e) => showGradeTopics(5, e));
+            document.getElementById('select-grade-6').addEventListener('click', (e) => showGradeTopics(6, e));
+
+            document.querySelectorAll('.ujian-option-btn-group').forEach(group => {
+                group.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') {
+                        Array.from(group.children).forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                    }
+                });
+            });
+
+            // Set default active buttons for exam setup
+            document.querySelector('#ujian-kelas-group button[data-value="5"]').classList.add('active');
+            document.querySelector('#ujian-jumlah-group button[data-value="10"]').classList.add('active');
+            document.querySelector('#ujian-kesulitan-group button[data-value="sedang"]').classList.add('active');
+
+            document.getElementById('start-ujian-btn').addEventListener('click', startQuiz);
+            document.getElementById('quiz-next-btn').addEventListener('click', () => navigateQuiz(1));
+            document.getElementById('quiz-prev-btn').addEventListener('click', () => navigateQuiz(-1));
+            document.getElementById('finish-quiz-btn').addEventListener('click', finishQuiz);
+            document.getElementById('close-results-btn').addEventListener('click', () => toggleOverlay('results-overlay', false));
+            document.getElementById('export-pdf-btn').addEventListener('click', exportResultsToPDF);
+        });
+
+        function createTopicCard(topic, gridElement, grade) {
+            const card = document.createElement('button');
+            card.className = `topic-card text-center p-4 rounded-lg shadow-md ${topic.color} flex flex-col justify-center items-center h-24`;
+            card.dataset.topicId = topic.id; card.dataset.grade = grade;
+            card.innerHTML = `<h3 class="font-semibold text-sm">${topic.title}</h3>`;
+            gridElement.appendChild(card);
+            card.addEventListener('click', () => {
+                const contentArea = document.getElementById('content-area');
+                gridElement.after(contentArea);
+                contentArea.classList.remove('hidden');
+                displayTopic(topic.id, grade);
+                document.querySelectorAll('.topic-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+            });
+        }
+
+        function displayTopic(topicId, grade) {
+            const topic = studyData[`grade${grade}`][topicId]; if (!topic) return;
+            const container = document.getElementById('topic-content-container');
+            container.innerHTML = `<h3 class="text-2xl font-bold text-center mb-4 text-amber-700">${topic.title}</h3>
+                <div>
+                    <h4 class="font-bold text-lg">Teori & Konsep Kunci</h4>
+                    <p class="mt-2 text-gray-700">${topic.theory}</p>
+                    <hr class="my-4">
+                    <h4 class="font-bold text-lg">Contoh Soal</h4>
+                    <p class="mt-2 p-3 bg-gray-100 rounded-md">${topic.exampleProblem}</p>
+                    <button class="toggle-solution-btn bg-amber-500 text-white px-4 py-2 rounded mt-4">Tampilkan Jawaban</button>
+                    <div id="solution-container" class="solution">
+                        <div class="solution-padding mt-4 bg-amber-50 p-4 rounded-lg border border-amber-200">
+                           ${topic.exampleSolution}
+                        </div>
+                    </div>
+                </div>`;
+            setupTopicListeners();
+        }
+
+        function setupTopicListeners() {
+            document.getElementById('close-btn')?.addEventListener('click', () => {
+                document.getElementById('content-area').classList.add('hidden');
+                document.querySelectorAll('.topic-card').forEach(c => c.classList.remove('active'));
+            });
+            document.querySelector('.toggle-solution-btn').addEventListener('click', (e) => {
+                 const solutionDiv = document.getElementById('solution-container');
+                 solutionDiv.classList.toggle('show');
+                 e.target.textContent = solutionDiv.classList.contains('show') ? 'Sembunyikan Jawaban' : 'Tampilkan Jawaban';
+            });
+        }
+
+        function startQuiz() {
+            const btn = document.getElementById('start-ujian-btn');
+            btn.disabled = true;
+            btn.textContent = 'Menyiapkan...';
+
+            const kelas = document.querySelector('#ujian-kelas-group .active').dataset.value;
+            const jumlah = parseInt(document.querySelector('#ujian-jumlah-group .active').dataset.value);
+            const kesulitan = document.querySelector('#ujian-kesulitan-group .active').dataset.value;
+
+            const topicPool = studyData[`grade${kelas}`];
+            const topicKeys = Object.keys(topicPool);
+
+            currentQuiz = {
+                questionRecipes: [],
+                userAnswers: new Array(jumlah).fill(''),
+                generatedQuestions: new Array(jumlah).fill(null),
+                currentIdx: 0,
+                kelas, jumlah, kesulitan
+            };
+
+            const shuffledTopicKeys = topicKeys.sort(() => 0.5 - Math.random());
+
+            for(let i=0; i<jumlah; i++) {
+                const topicKey = shuffledTopicKeys[i % shuffledTopicKeys.length];
+                const topic = topicPool[topicKey];
+                const variation = topic.variations[getRandomInt(0, topic.variations.length - 1)];
+                const vars = {};
+                variation.interactiveInputs.forEach(input => {
+                    if (input.randomRanges) {
+                         const range = input.randomRanges[kesulitan];
+                         vars[input.id] = getRandomInt(range[0], range[1]);
+                         if (variation.id === 'find_triangle_angle') { let a1 = getRandomInt(range[0], range[1]); let a2 = getRandomInt(range[0], 179 - a1); vars['angleA'] = a1; vars['angleB'] = a2; }
+                    } else if (input.randomDataConfig) {
+                        let d = [];
+                        const count = getRandomInt(input.randomDataConfig.count[0], input.randomDataConfig.count[1]);
+                        const source = input.randomDataConfig.from || [];
+                        if(source.length > 0) { let s = new Set(); while(s.size < count) s.add(source[getRandomInt(0,source.length-1)]); d = [...s]; }
+                        else { let s = new Set(); while(s.size < count) s.add(getRandomInt(input.randomDataConfig.range[0], input.randomDataConfig.range[1])); d = [...s]; }
+                        vars[input.id] = d.join(',');
+                    }
+                });
+
+                currentQuiz.questionRecipes.push({ topicKey, variationId: variation.id, vars, topicTitle: topic.title });
+            }
+
+            displayQuizQuestion(0);
+            toggleOverlay('quiz-overlay', true);
+            btn.disabled = false;
+            btn.textContent = 'Mulai Ujian';
+        }
+
+        function generateQuizQuestion(index) {
+            if (currentQuiz.generatedQuestions[index]) {
+                return currentQuiz.generatedQuestions[index];
+            }
+            const recipe = currentQuiz.questionRecipes[index];
+            const topic = studyData[`grade${currentQuiz.kelas}`][recipe.topicKey];
+            const variation = topic.variations.find(v => v.id === recipe.variationId);
+
+            const questionText = variation.generateProblem(recipe.vars);
+            const solutionText = variation.generateSolution(recipe.vars);
+            const correctAnswer = simpleNumericAnswer(solutionText);
+
+            const questionData = { questionText, solutionText, correctAnswer, topicTitle: recipe.topicTitle };
+            currentQuiz.generatedQuestions[index] = questionData;
+            return questionData;
+        }
+
+        function displayQuizQuestion(index) {
+            if (index < 0 || index >= currentQuiz.questionRecipes.length) return;
+            currentQuiz.currentIdx = index;
+            const q = generateQuizQuestion(index);
+
+            document.getElementById('quiz-progress').textContent = `Soal ${index + 1} dari ${currentQuiz.jumlah}`;
+            document.getElementById('quiz-question').innerHTML = q.questionText;
+            document.getElementById('quiz-answer-input').value = currentQuiz.userAnswers[index];
+            document.getElementById('quiz-prev-btn').disabled = index === 0;
+            document.getElementById('quiz-next-btn').style.display = index === currentQuiz.questionRecipes.length - 1 ? 'none' : 'inline-block';
+        }
+
+        function navigateQuiz(direction) {
+            currentQuiz.userAnswers[currentQuiz.currentIdx] = document.getElementById('quiz-answer-input').value.trim();
+            displayQuizQuestion(currentQuiz.currentIdx + direction);
+        }
+
+        function finishQuiz() {
+            navigateQuiz(0); // Save current answer
+            toggleOverlay('quiz-overlay', false);
+            calculateAndShowResults();
+        }
+
+        function calculateAndShowResults() {
+            // Ensure all questions are generated for the review
+            currentQuiz.questionRecipes.forEach((_, i) => {
+                if (!currentQuiz.generatedQuestions[i]) {
+                    generateQuizQuestion(i);
+                }
+            });
+
+            let correctCount = 0;
+            const wrongTopics = {};
+            currentQuiz.generatedQuestions.forEach((q, i) => {
+                const user = currentQuiz.userAnswers[i].replace(',', '.');
+                const correct = q.correctAnswer;
+                if(user && correct && user == correct) {
+                    correctCount++;
+                } else {
+                    wrongTopics[q.topicTitle] = (wrongTopics[q.topicTitle] || 0) + 1;
+                }
+            });
+
+            const score = (currentQuiz.generatedQuestions.length > 0) ? (correctCount / currentQuiz.generatedQuestions.length) * 100 : 0;
+            document.getElementById('results-score').textContent = `${Math.round(score)}%`;
+            document.getElementById('results-summary').textContent = `Kamu menjawab ${correctCount} dari ${currentQuiz.generatedQuestions.length} soal dengan benar!`;
+
+            const analysisContainer = document.getElementById('results-analysis');
+            const sortedWrongTopics = Object.entries(wrongTopics).sort((a, b) => b[1] - a[1]);
+            if (sortedWrongTopics.length > 0) {
+                analysisContainer.innerHTML = `<p class="mb-2">Kamu perlu memperkuat pemahaman di topik:</p><ul class="list-disc list-inside font-semibold">${sortedWrongTopics.map(t => `<li>${t[0]}</li>`).join('')}</ul><p class="mt-2">Coba pelajari lagi topik ini di <strong>Mode Belajar</strong>!</p>`;
+            } else {
+                analysisContainer.innerHTML = `<p class="font-semibold text-green-600">Kerja bagus! Pemahamanmu sudah merata.</p>`;
+            }
+
+            document.getElementById('results-review-container').innerHTML = currentQuiz.generatedQuestions.map((q, i) => {
+                const user = currentQuiz.userAnswers[i];
+                const isCorrect = user && q.correctAnswer && user.replace(',', '.') == q.correctAnswer;
+                return `<div class="p-4 rounded-lg bg-gray-50 answer-review ${isCorrect ? 'correct' : 'incorrect'}">
+                    <p class="font-bold">${i+1}. ${q.questionText}</p>
+                    <p>Jawabanmu: <span class="font-semibold ${isCorrect ? 'text-green-600' : 'text-red-600'}">${user || '(Tidak dijawab)'}</span> | Jawaban Benar: <span class="font-semibold text-green-600">${q.correctAnswer}</span></p>
+                    <details class="mt-2 text-sm"><summary class="cursor-pointer">Lihat Pembahasan</summary><div class="mt-2 pt-2 border-t">${q.solutionText}</div></details>
+                </div>`;
+            }).join('');
+
+            toggleOverlay('results-overlay', true);
+        }
+
+        function toggleOverlay(overlayId, show) {
+            const overlay = document.getElementById(overlayId);
+            if (show) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+            } else {
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+        }
+
+        function exportResultsToPDF() {
+            const btn = document.getElementById('export-pdf-btn');
+            btn.textContent = 'Mengekspor...';
+            btn.disabled = true;
+
+            let contentHTML = `
+                <!DOCTYPE html><html><head><title>Hasil Ujian</title><style>
+                    body { font-family: Arial, sans-serif; color: #333; font-size: 12px; line-height: 1.6; }
+                    h1 { font-size: 24px; color: #d97706; }
+                    h2 { font-size: 18px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 20px;}
+                    .question-block { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; page-break-inside: avoid; }
+                    .solution-text { background-color: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px solid #eee; }
+                    strong, b { font-weight: bold; }
+                    sup { vertical-align: super; font-size: smaller; }
+                </style></head><body>
+                <h1>Hasil Ujian Matematika</h1>
+                <p><strong>Skor:</strong> ${document.getElementById('results-score').textContent}</p>
+                <p>${document.getElementById('results-summary').textContent}</p>
+                <h2>Tinjauan Jawaban</h2>
+            `;
+
+            currentQuiz.generatedQuestions.forEach((q, i) => {
+                const user = currentQuiz.userAnswers[i] || '(Tidak dijawab)';
+                const isCorrect = user.replace(',', '.') == q.correctAnswer;
+                contentHTML += `<div class="question-block">
+                    <p><strong>${i+1}. ${q.questionText}</strong></p>
+                    <p>Jawabanmu: <span style="color: ${isCorrect ? 'green' : 'red'}; font-weight: bold;">${user}</span></p>
+                    <p>Jawaban Benar: <span style="color: green; font-weight: bold;">${q.correctAnswer}</span></p>
+                    <p><strong>Pembahasan:</strong></p>
+                    <div class="solution-text">${q.solutionText.replace(/<br>/g, '<br />')}</div>
+                </div>`;
+            });
+
+            contentHTML += `</body></html>`;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(contentHTML);
+            printWindow.document.close();
+            printWindow.focus();
+
+            setTimeout(() => {
+                printWindow.print();
+                btn.textContent = 'Export ke PDF';
+                btn.disabled = false;
+            }, 500); // Small delay to ensure content is rendered
+        }
+    </script>
+</body>
+</html>
